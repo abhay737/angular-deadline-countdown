@@ -1,45 +1,51 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Subscription, interval } from 'rxjs';
-import { DeadlineService } from '../../services/deadline.service';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { interval, Observable } from 'rxjs';
+import {
+  map,
+  shareReplay,
+  startWith,
+  switchMap,
+  takeWhile
+} from 'rxjs/operators';
+
+import {
+  DeadlineResponse,
+  DeadlineService
+} from '../../services/deadline.service';
 
 @Component({
   selector: 'app-deadline',
+  standalone: true,
   imports: [CommonModule],
   templateUrl: './deadline.component.html',
-  styleUrl: './deadline.component.scss'
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DeadlineComponent {
 
-  secondsLeft:any = 0;
+  readonly secondsLeft$: Observable<number>;
 
-  private timerSubscription?: Subscription;
+  constructor(private deadlineService: DeadlineService) {
 
-  constructor(private deadlineService: DeadlineService) {}
+    this.secondsLeft$ = this.deadlineService.getDeadline().pipe(
+      switchMap(({ secondsLeft }: DeadlineResponse) => {
+        const deadlineTimestamp = Date.now() + secondsLeft * 1000;
 
-  ngOnInit(): void {
-    this.getDeadlineTime();
+        return interval(1000).pipe(
+          startWith(0),
+          map(() =>
+            Math.max(
+              0,
+              Math.ceil((deadlineTimestamp - Date.now()) / 1000)
+            )
+          ),
+          takeWhile(seconds => seconds > 0, true)
+        );
+      }),
+      shareReplay({
+        bufferSize: 1,
+        refCount: true
+      })
+    );
   }
-
-  getDeadlineTime(){
-    this.deadlineService.getDeadline().subscribe({
-      next: (response) => {
-        this.secondsLeft = response.secondsLeft;
-
-        this.timerSubscription = interval(1000).subscribe(() => {
-          if(this.secondsLeft > 0){
-            this.secondsLeft--;
-          }
-        });
-      },
-      error: (error) => {
-        console.error('Failed to load deadline', error);
-      }
-    });
-  }
-
-  ngOnDestroy(): void {
-    this.timerSubscription?.unsubscribe();
-  }
-
 }
