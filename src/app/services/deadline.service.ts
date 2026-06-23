@@ -1,26 +1,26 @@
-import { Injectable } from "@angular/core";
-import { HttpClient } from "@angular/common/http";
-import { Observable, of } from "rxjs";
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
 
 export interface DeadlineResponse {
-    secondsLeft: number;
+  secondsLeft: number;
 }
 
 @Injectable({
-    providedIn: 'root'
+  providedIn: 'root'
 })
 export class DeadlineService {
 
-    constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {}
 
-    getDeadline(): Observable<DeadlineResponse> {
-        // Mock Data for local testing because the backend endpoint was not provided as part of the assignment.
-        return of({
-            secondsLeft: 600
-        })
+  getDeadline(): Observable<DeadlineResponse> {
 
-        // Actual Implementation:
-        // return this.http.get<DeadlineResponse>('/api/deadline');
-    }
+    // Mock implementation for local testing
+    return of({
+      secondsLeft: 600
+    });
 
+    // Production implementation
+    // return this.http.get<DeadlineResponse>('/api/deadline');
+  }
 }
